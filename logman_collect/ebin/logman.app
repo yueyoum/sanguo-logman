@@ -1,0 +1,9 @@
+{application,logman,
+             [{description,[]},
+              {vsn,"1"},
+              {registered,[]},
+              {applications,[kernel,stdlib]},
+              {mod,{logman_app,[]}},
+              {env,[]},
+              {modules,[logman_app,logman_collect,logman_pool,logman_sup,
+                        logman_write,logman_write_sup]}]}.
