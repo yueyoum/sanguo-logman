@@ -1,4 +1,0 @@
-[
-{sasl,[{sasl_error_logger, {file, "run.log"}}]},
-{logman, [{port, 11099}, {logs_flush_amount, 200}, {logs_flush_time, 5000}]}
-].

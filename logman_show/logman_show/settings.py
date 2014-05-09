@@ -53,22 +53,6 @@ ROOT_URLCONF = 'logman_show.urls'
 WSGI_APPLICATION = 'logman_show.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/1.6/ref/settings/#databases
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': 'sanguo_log', # Or path to database file if using sqlite3.
-        # The following settings are not used with sqlite3:
-        'USER': 'root',
-        'PASSWORD': 'root',
-        'HOST': '127.0.0.1', # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
-        'PORT': '3306', # Set to empty string for default.
-        'CONN_MAX_AGE': 120,
-    }
-}
-
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.6/topics/i18n/
@@ -90,3 +74,30 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
+
+# project settings
+import xml.etree.ElementTree as et
+tree = et.ElementTree(file=os.path.join(os.path.dirname(BASE_DIR), "config.xml"))
+
+MYSQL_HOST = tree.find("mysql/host").text
+MYSQL_PORT = tree.find("mysql/port").text
+MYSQL_DB = tree.find("mysql/db").text
+MYSQL_USER = tree.find("mysql/user").text
+MYSQL_PASSWORD = tree.find("mysql/password").text
+
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
+        'NAME': MYSQL_DB, # Or path to database file if using sqlite3.
+        # The following settings are not used with sqlite3:
+        'USER': MYSQL_USER,
+        'PASSWORD': MYSQL_PASSWORD,
+        'HOST': MYSQL_HOST, # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
+        'PORT': MYSQL_PORT, # Set to empty string for default.
+    }
+}
+
+del et
+del tree

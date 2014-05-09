@@ -52,11 +52,19 @@ write_log(Logs) ->
 init([]) ->
     crypto:start(),
     application:start(emysql),
+    {ok, MysqlUser} = application:get_env(logman, mysql_user),
+    {ok, MysqlPassword} = application:get_env(logman, mysql_password),
+    {ok, MysqlHost} = application:get_env(logman, mysql_host),
+    {ok, MysqlPort} = application:get_env(logman, mysql_port),
+    {ok, MysqlDb} = application:get_env(logman, mysql_db),
+
     ok = emysql:add_pool(logman_pool, [
                                        {size, 1},
-                                       {user, "root"},
-                                       {password, "root"},
-                                       {database, "sanguo_log"},
+                                       {user, MysqlUser},
+                                       {password, MysqlPassword},
+                                       {host, MysqlHost},
+                                       {port, MysqlPort},
+                                       {database, MysqlDb},
                                        {encoding, utf8}
                                       ]),
     {ok, logman_pool}.

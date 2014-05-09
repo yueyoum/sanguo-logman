@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+    <log>
+        <port>11099</port>
+        <flush_amount>50</flush_amount>
+        <flush_time>60000</flush_time>
+    </log>
+
+    <mysql>
+        <host>127.0.0.1</host>
+        <port>3306</port>
+        <db>sanguo_log</db>
+        <user>root</user>
+        <password>root</password>
+    </mysql>
+</config>
