@@ -2,7 +2,6 @@
 <config>
     <log>
         <port>11099</port>
-        <flush_amount>50</flush_amount>
         <flush_time>60000</flush_time>
     </log>
 

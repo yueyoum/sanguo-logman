@@ -13,7 +13,7 @@
          terminate/2,
          code_change/3]).
 
--record(state, {context, sock, logs=[]}).
+-record(state, {context, sock, ftime, log_system=[], log_resources=[]}).
 
 
 %%%===================================================================
@@ -46,13 +46,13 @@ start_link() ->
 %% @end
 %%--------------------------------------------------------------------
 init([]) ->
+    {ok, FlushTime} = application:get_env(logman, logs_flush_time),
+    {ok, Port} = application:get_env(logman, port),
     {ok, Context} = erlzmq:context(),
     {ok, Socket} = erlzmq:socket(Context, [pull, {active, true}]),
-    {ok, Port} = application:get_env(logman, port),
     ok = erlzmq:bind(Socket, "tcp://0.0.0.0:" ++ integer_to_list(Port)),
-    {ok, FlushTime} = application:get_env(logman, logs_flush_time),
     timer:send_after(FlushTime, ?MODULE, flush_logs),
-    {ok, #state{context=Context, sock=Socket, logs=[]}}.
+    {ok, #state{context=Context, sock=Socket, ftime=FlushTime}}.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -97,31 +97,23 @@ handle_cast(_Msg, State) ->
 %%--------------------------------------------------------------------
 %%
 
-handle_info({zmq, _Socket, Msg, []}, #state{logs=Logs} = State) ->
-    {ok, FlushAmount} = application:get_env(logman, logs_flush_amount),
-    NewLogs = [Msg | Logs],
-    FinalLogs = 
-        case length(NewLogs) of
-            N when N >= FlushAmount ->
-                ok = flush_logs(NewLogs),
-                [];
-            _ ->
-                NewLogs
-        end,
-    {noreply, State#state{logs=FinalLogs}};
+handle_info({zmq, _Socket, Msg, []}, #state{log_system=LogSystem, log_resources=LogResources} = State) ->
+    <<LogId:32, LogBin/binary>> = Msg,
+    {NewLogSystem, NewLogResources} =
+    case LogId of
+        1 ->
+            {[LogBin | LogSystem], LogResources};
+        2 ->
+            {LogSystem, [LogBin | LogResources]};
+        _ ->
+            {LogSystem, LogResources}
+    end,
+    {noreply, State#state{log_system=NewLogSystem, log_resources=NewLogResources}};
 
-handle_info(flush_logs, #state{logs=Logs} = State) ->
-    {ok, FlushTime} = application:get_env(logman, logs_flush_time),
-    FinalLogs =
-        case length(Logs) of
-            N when N =:= 0 ->
-                Logs;
-            _ ->
-                ok = flush_logs(Logs),
-                []
-        end,
+handle_info(flush_logs, #state{ftime=FlushTime, log_system=LogSystem, log_resources=LogResources} = State) ->
+    flush_logs([LogSystem, LogResources]),
     timer:send_after(FlushTime, ?MODULE, flush_logs),
-    {noreply, State#state{logs=FinalLogs}};
+    {noreply, State#state{log_system=[], log_resources=[]}};
 
 handle_info(_Info, State) ->
     {noreply, State}.

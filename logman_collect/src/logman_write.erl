@@ -128,7 +128,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%%
 %%%
 
-get_log_data(Log) ->
+get_log_system_data(Log) ->
     case Log of
         <<>> ->
             <<>>;
@@ -138,19 +138,16 @@ get_log_data(Log) ->
              {<<"char_id">>, CharId},
              {<<"func_name">>, FuncName},
              {<<"occurred_at">>, OccurredAt},
-             {<<"node_id">>, NodeId},
              {<<"msg">>, Msg},
              {<<"error_id">>, ErrorId},
              {<<"levelname">>, LevelName}
             ] = Data,
 
-            XNodeId = integer_to_binary(NodeId),
             XErrorId = integer_to_binary(ErrorId),
             XCharId = integer_to_binary(CharId),
             <<
                 $(,
                 $', LevelName/binary, $', $,,
-                XNodeId/binary, $,,
                 XErrorId/binary, $,,
                 XCharId/binary, $,,
                 $', FuncName/binary, $', $,,
@@ -160,9 +157,8 @@ get_log_data(Log) ->
             >>
     end.
 
-
-write_log(Pool, Logs) ->
-    UnpackedLogs = [get_log_data(T) || T <- Logs],
+write_log_system(Pool, Logs) ->
+    UnpackedLogs = [get_log_system_data(T) || T <- Logs],
     Fun = fun(A, B) ->
             case B of
                 <<>> -> A;
@@ -172,10 +168,98 @@ write_log(Pool, Logs) ->
 
     Values = lists:foldr(Fun, <<>>, UnpackedLogs),
 
-    Header = <<"INSERT INTO logs (levelname, node_id, error_id, char_id, func_name, msg, occurred_at) VALUES ">>,
+    Header = <<"INSERT INTO log_system (levelname, error_id, char_id, func_name, msg, occurred_at) VALUES ">>,
     SQL = <<Header/binary, Values/binary>>,
 
-    _Resulr = emysql:execute(Pool, SQL),
+    _Result = emysql:execute(Pool, SQL),
     ok.
 
+
+
+get_log_resources_data(Log) ->
+    case Log of
+        <<>> ->
+            <<>>;
+        _ ->
+            {ok, {Data}} = msgpack:unpack(Log),
+            [
+                {<<"exp">>, Exp},
+                {<<"gold">>, Gold},
+                {<<"func_name">>, FuncName},
+                {<<"occurred_at">>, OccurredAt},
+                {<<"souls">>, Souls},
+                {<<"equipments">>, Equipments},
+                {<<"stuffs">>, Stuffs},
+                {<<"gems">>, Gems},
+                {<<"char_id">>, CharId},
+                {<<"sycee">>, Sycee},
+                {<<"des">>, Des},
+                {<<"heros">>, Heros},
+                {<<"income">>, Income},
+                {<<"official_exp">>, OfficialExp}
+            ] = Data,
+
+            IntExp = integer_to_binary(Exp),
+            IntGold = integer_to_binary(Gold),
+            IntCharId = integer_to_binary(CharId),
+            IntSycee = integer_to_binary(Sycee),
+            IntIncome = integer_to_binary(Income),
+            IntOfficialExp = integer_to_binary(OfficialExp),
+
+            <<
+                $(,
+                IntCharId/binary, $,,
+                IntIncome/binary, $,,
+                $', FuncName/binary, $', $,,
+                IntExp/binary, $,,
+                IntOfficialExp/binary, $,,
+                IntGold/binary, $,,
+                IntSycee/binary, $,,
+                $', Heros/binary, $', $,,
+                $', Souls/binary, $', $,,
+                $', Equipments/binary, $', $,,
+                $', Gems/binary, $', $,,
+                $', Stuffs/binary, $', $,,
+                $', Des/binary, $', $,,
+                $', OccurredAt/binary, $',
+                $)
+            >>
+    end.
+
+write_log_resources(Pool, Logs) ->
+    UnpackedLogs = [get_log_resources_data(T) || T <- Logs],
+    Fun = fun(A, B) ->
+            case B of
+                <<>> -> A;
+                _ -> <<A/binary, $,, B/binary>>
+            end
+          end,
+
+    Values = lists:foldr(Fun, <<>>, UnpackedLogs),
+
+    Header = <<"INSERT INTO log_resource (char_id, income, func_name, exp, official_exp, gold, sycee, heros, souls, equipments, gems, stuffs, des, occurred_at) VALUES ">>,
+    SQL = <<Header/binary, Values/binary>>,
+    io:format("~p~n", [SQL]),
+
+    _Result = emysql:execute(Pool, SQL),
+    io:format("~p~n", [_Result]),
+    ok.
+
+
+write_log(Pool, [LogSystem, LogResources]) ->
+    case LogSystem of
+        [] ->
+            ok;
+        LogSystem ->
+            write_log_system(Pool, LogSystem)
+    end,
+
+    case LogResources of
+        [] ->
+            ok;
+        LogResources ->
+            write_log_resources(Pool, LogResources)
+    end,
+
+    ok.
 

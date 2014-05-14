@@ -2,4 +2,5 @@
 *.log
 *.logs
 .idea
+.dump
 config.xml

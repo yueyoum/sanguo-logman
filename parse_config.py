@@ -7,7 +7,6 @@ import xml.etree.ElementTree as et
 tree = et.ElementTree(file="config.xml")
 
 log_port = tree.find("log/port").text
-log_flush_amount = tree.find("log/flush_amount").text
 log_flush_time = tree.find("log/flush_time").text
 
 mysql_host = tree.find("mysql/host").text
@@ -19,7 +18,6 @@ mysql_password = tree.find("mysql/password").text
 config_template = """[
 {sasl, [{sasl_error_logger, {file, "run.log"}}]},
 {logman, [{port, %s},
-          {logs_flush_amount, %s},
           {logs_flush_time, %s},
           {mysql_host, "%s"},
           {mysql_port, %s},
@@ -31,7 +29,6 @@ config_template = """[
 
 config = config_template % (
     log_port,
-    log_flush_amount,
     log_flush_time,
     mysql_host,
     mysql_port,
