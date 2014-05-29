@@ -111,7 +111,7 @@ handle_info({zmq, _Socket, Msg, []}, #state{log_system=LogSystem, log_resources=
     {noreply, State#state{log_system=NewLogSystem, log_resources=NewLogResources}};
 
 handle_info(flush_logs, #state{ftime=FlushTime, log_system=LogSystem, log_resources=LogResources} = State) ->
-    flush_logs([LogSystem, LogResources]),
+    flush_logs([lists:reverse(LogSystem), lists:reverse(LogResources)]),
     timer:send_after(FlushTime, ?MODULE, flush_logs),
     {noreply, State#state{log_system=[], log_resources=[]}};
 
